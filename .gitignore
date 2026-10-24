@@ -1,0 +1,14 @@
+# Build output
+target/
+node_modules/
+dist/
+
+# Local data and secrets
+backend/data/
+.env
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.iml
