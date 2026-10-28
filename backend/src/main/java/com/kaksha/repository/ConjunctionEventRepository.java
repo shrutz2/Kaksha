@@ -23,4 +23,15 @@ public interface ConjunctionEventRepository extends JpaRepository<ConjunctionEve
     List<ConjunctionEvent> findEarlierPredictions(@Param("runId") Long runId, @Param("primaryId") Long primaryId,
                                                   @Param("secondaryId") Long secondaryId,
                                                   @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    /**
+     * Every prediction of one approach made up to and including the given run, oldest first.
+     * It is the same search as above, but the run itself is included and the order is reversed.
+     */
+    @Query("select e from ConjunctionEvent e where e.daily = true and e.runId <= :runId "
+            + "and e.primaryId = :primaryId and e.secondaryId = :secondaryId "
+            + "and e.tca between :from and :to order by e.runId asc")
+    List<ConjunctionEvent> findPredictionHistory(@Param("runId") Long runId, @Param("primaryId") Long primaryId,
+                                                 @Param("secondaryId") Long secondaryId,
+                                                 @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 }
