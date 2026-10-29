@@ -1,0 +1,68 @@
+spring:
+  application:
+    name: kaksha
+  mail:
+    # Leave SMTP_HOST empty to log emails instead of sending them.
+    host: ${SMTP_HOST:}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3307}/${DB_NAME:kaksha}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${DB_USER:kaksha}
+    password: ${DB_PASSWORD:kaksha}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 500
+          time_zone: UTC
+        order_inserts: true
+        order_updates: true
+
+kaksha:
+  alerts:
+    from: ${ALERT_FROM:alerts@kaksha.local}
+    # Used to build the unsubscribe link in emails.
+    public-url: ${PUBLIC_URL:http://localhost:5173}
+  # Four times a day, at 02:30, 08:30, 14:30 and 20:30 UTC. Each time the catalog is refreshed and
+  # every Indian satellite is screened again.
+  refresh-cron: "${REFRESH_CRON:0 30 2,8,14,20 * * *}"
+  orekit:
+    data-dir: ${OREKIT_DATA_DIR:./data/orekit-data}
+  globe:
+    # How many non-Indian objects are drawn on the live globe.
+    sample-size: 4000
+  screening:
+    altitude-margin-km: 10
+    step-seconds: 60
+    horizon-hours: 24
+    daily-horizon-hours: 48
+    # Must be far larger than the final limits, see ScreeningPipeline for why.
+    coarse-grid-threshold-km: 500
+    screening-volume-km: 50
+    event-threshold-km: 5
+    refine-tolerance-seconds: 0.01
+    run-on-startup: ${SCREEN_ON_STARTUP:false}
+  celestrak:
+    gp-url: https://celestrak.org/NORAD/elements/gp.php?GROUP={group}&FORMAT=csv
+    # The first group is required. The debris groups are optional and add objects that a list of
+    # active satellites does not contain.
+    gp-groups:
+      - active
+      - cosmos-2251-debris
+      - iridium-33-debris
+      - fengyun-1c-debris
+      - cosmos-1408-debris
+    satcat-url: https://celestrak.org/pub/satcat.csv
+    cache-dir: ${CELESTRAK_CACHE_DIR:./data/celestrak}
+    # The scheduled job downloads every six hours. A file younger than this is reused, so restarts
+    # and manual runs do not download again. It is below six hours so the next run always refreshes.
+    # CelesTrak asks not to download the same file more often than every two hours.
+    min-refresh: 5h
