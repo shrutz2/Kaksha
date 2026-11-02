@@ -1,0 +1,27 @@
+# Adds HTTPS in front of the web page. Start with:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.https.yml up -d
+#
+# Needs SITE_ADDRESS in .env (a domain name that points at this server) and ports 80 and 443
+# open. Caddy takes over the public ports, so the web container is no longer published.
+services:
+  frontend:
+    ports: !override []
+
+  caddy:
+    image: caddy:2
+    container_name: kaksha-caddy
+    restart: unless-stopped
+    depends_on:
+      - frontend
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+
+volumes:
+  caddy-data:

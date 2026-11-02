@@ -1,0 +1,5 @@
+# Used by docker-compose.https.yml. Caddy gets and renews the certificate by itself.
+# SITE_ADDRESS is the domain name that points at the server, set in .env.
+{$SITE_ADDRESS} {
+    reverse_proxy frontend:80
+}

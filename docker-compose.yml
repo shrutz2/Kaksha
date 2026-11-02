@@ -1,0 +1,63 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: kaksha-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-kaksha}
+      MYSQL_USER: ${DB_USER:-kaksha}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-kaksha}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-kaksha-root}
+    ports:
+      # Bound to this machine only, so the database is never open to the internet.
+      - "127.0.0.1:${DB_PORT:-3307}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 10
+
+  backend:
+    build: ./backend
+    container_name: kaksha-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-kaksha}
+      DB_USER: ${DB_USER:-kaksha}
+      DB_PASSWORD: ${DB_PASSWORD:-kaksha}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      ALERT_FROM: ${ALERT_FROM:-alerts@kaksha.local}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost}
+      SCREEN_ON_STARTUP: ${SCREEN_ON_STARTUP:-false}
+      REFRESH_CRON: ${REFRESH_CRON:-0 30 2,8,14,20 * * *}
+    volumes:
+      # Keeps the downloaded CelesTrak files between restarts, so they are not fetched again.
+      - catalog-data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8080/api/satellites/indian"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  frontend:
+    build: ./frontend
+    container_name: kaksha-web
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${WEB_PORT:-80}:80"
+
+volumes:
+  mysql-data:
+  catalog-data:
